@@ -21,7 +21,7 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Run codegen
-        run: php bin/exactonline-codegen
+        run: php bin/exactonline-codegen build/
 
       - name: Upload generated code as artifact
         uses: actions/upload-artifact@v4
