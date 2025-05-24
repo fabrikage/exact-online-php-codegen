@@ -1,0 +1,30 @@
+name: Run Codegen and Upload Artifact
+
+on:
+  workflow_dispatch:
+
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, libxml, simplexml
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run codegen
+        run: php bin/exactonline-codegen
+
+      - name: Upload generated code as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegen-output
+          path: build/
