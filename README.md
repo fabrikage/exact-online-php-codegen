@@ -1,5 +1,7 @@
 # Exact Online Code Generator
 
+[![PHPUnit Tests](https://github.com/fabrikage/exact-online-php-codegen/actions/workflows/php-tests.yml/badge.svg)](https://github.com/fabrikage/exact-online-php-codegen/actions/workflows/php-tests.yml)
+
 Tired of manually creating PHP models for the Exact Online API? This tool crawls their documentation and generates all the classes for you. It's built with PHP 8.4 and creates clean, type-safe models that are ready to use.
 
 ## What it does
