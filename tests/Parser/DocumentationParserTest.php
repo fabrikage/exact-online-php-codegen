@@ -35,7 +35,7 @@ final class DocumentationParserTest extends TestCase
         $html = $this->getMockResourcePageHtml();
         $resource = $this->parser->parseResourcePage($html);
 
-        $this->assertEquals('Accounts', $resource->name);
+        $this->assertEquals('Bulk CRM Accounts', $resource->name);
         $this->assertStringContainsString('/api/v1/', $resource->endpoint);
         $this->assertNotEmpty($resource->properties);
     }
@@ -106,42 +106,51 @@ final class DocumentationParserTest extends TestCase
     {
         return '<!DOCTYPE html>
 <html>
-<head><title>Accounts - Exact Online REST API</title></head>
+<head>
+    <title>Bulk CRM Accounts - Exact Online REST API</title>
+</head>
 <body>
-    <h1>Accounts</h1>
-    <p>This resource represents customer and supplier accounts.</p>
-    <code>/api/v1/{division}/crm/Accounts</code>
-    
+    <h1>Bulk CRM Accounts</h1>
+    <p>This resource allows bulk operations on CRM accounts.</p>
+    <code>/api/v1/{division}/bulk/CRM/Accounts</code>
     <table>
         <thead>
-            <tr>
-                <th>Property</th>
-                <th>Key</th>
-                <th>Required</th>
-                <th>Type</th>
-                <th>Description</th>
+            <tr class="header">
+                <td></td>
+                <td>Name</td>
+                <td>Mandatory</td>
+                <td>Value POST</td>
+                <td>Value PUT</td>
+                <td>Type</td>
+                <td>Description</td>
             </tr>
         </thead>
         <tbody>
             <tr>
+                <td><input type="checkbox" /></td>
                 <td>ID</td>
                 <td>true</td>
                 <td>true</td>
-                <td>Guid</td>
+                <td>false</td>
+                <td>Edm.Guid</td>
                 <td>Primary key</td>
             </tr>
             <tr>
+                <td><input type="checkbox" /></td>
                 <td>Name</td>
-                <td>false</td>
                 <td>true</td>
-                <td>String</td>
+                <td>true</td>
+                <td>true</td>
+                <td>Edm.String</td>
                 <td>Account name</td>
             </tr>
             <tr>
+                <td><input type="checkbox" /></td>
                 <td>Code</td>
                 <td>false</td>
-                <td>false</td>
-                <td>String</td>
+                <td>true</td>
+                <td>true</td>
+                <td>Edm.String</td>
                 <td>Account code (optional)</td>
             </tr>
         </tbody>

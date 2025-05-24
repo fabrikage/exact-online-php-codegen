@@ -329,7 +329,8 @@ final class DocumentationParser
     private function extractPropertiesFromTable(Element $table): array
     {
         $rows = $table->querySelectorAll('tr');
-        if (count($rows) < 2) {
+
+        if ($rows->length < 2) {
             return [];
         }
 
@@ -358,7 +359,7 @@ final class DocumentationParser
         $properties = [];
 
         // Parse property rows (skip header row)
-        for ($i = 1; $i < count($rows); $i++) {
+        for ($i = 1; $i < $rows->length; $i++) {
             $cells = $rows[$i]->querySelectorAll('td');
             if (count($cells) >= 3) {
                 $property = $this->parseDetailPropertyRow($cells);
@@ -406,7 +407,7 @@ final class DocumentationParser
         $description = $cellValues[6]; // Description is in column 6
 
         // Skip invalid rows
-        if (empty($name) || str_contains($name, '|') || stripos($name, 'name') !== false) {
+        if (empty($name) || str_contains($name, '|')) {
             return null;
         }
 
