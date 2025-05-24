@@ -1,0 +1,136 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use ExactOnline\CodeGen\Http\DocumentationClient;
+use ExactOnline\CodeGen\Parser\DocumentationParser;
+use ExactOnline\CodeGen\Generator\ModelGenerator;
+use ExactOnline\CodeGen\Crawler\ApiCrawler;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Filesystem\Filesystem;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+/**
+ * Console command for running the Exact Online API code generator
+ */
+final class GenerateCommand extends Command
+{
+    protected function configure(): void
+    {
+        $this->setName('generate')
+            ->setDescription('Generate PHP models from Exact Online API documentation')
+            ->addArgument(
+                'output-dir',
+                InputArgument::REQUIRED,
+                'Output directory for generated models'
+            )
+            ->addOption(
+                'log-file',
+                'l',
+                InputOption::VALUE_OPTIONAL,
+                'Log file path'
+            );
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        // Enable error reporting for debugging
+        error_reporting(E_ALL);
+        ini_set('display_errors', '1');
+
+        $io = new SymfonyStyle($input, $output);
+        $outputDir = $input->getArgument('output-dir');
+        $verbose = $output->isVerbose();
+        $logFile = $input->getOption('log-file');
+
+        // Setup logger
+        $logger = new Logger('exactonline-codegen');
+        $logLevel = $verbose ? Logger::DEBUG : Logger::INFO;
+
+        if ($logFile) {
+            $logger->pushHandler(new StreamHandler($logFile, $logLevel));
+        }
+
+        $logger->pushHandler(new StreamHandler('php://stdout', $logLevel));
+
+        $io->title('Exact Online API Code Generator');
+        $io->text('Using PHP ' . PHP_VERSION);
+
+        // Validate output directory
+        if (!is_dir($outputDir) && !mkdir($outputDir, 0755, true)) {
+            $io->error("Cannot create output directory: {$outputDir}");
+            return Command::FAILURE;
+        }
+
+        $outputDir = realpath($outputDir);
+        $io->text("Output directory: {$outputDir}");
+
+        // Initialize components
+        $httpClient = new DocumentationClient();
+        $parser = new DocumentationParser();
+        $generator = new ModelGenerator();
+        $filesystem = new Filesystem();
+
+        $crawler = new ApiCrawler(
+            httpClient: $httpClient,
+            parser: $parser,
+            generator: $generator,
+            filesystem: $filesystem,
+            logger: $logger
+        );
+
+        // Run the crawler
+        $io->section('Starting crawl...');
+        $startTime = microtime(true);
+
+        try {
+            $result = $crawler->crawl($outputDir);
+        } catch (\Throwable $e) {
+            $io->error('Crawler failed with exception: ' . $e->getMessage());
+            $io->text('Exception trace:');
+            $io->text($e->getTraceAsString());
+            return Command::FAILURE;
+        }
+
+        $endTime = microtime(true);
+        $duration = round($endTime - $startTime, 2);
+
+        if ($result->success) {
+            $stats = $result->getStatistics();
+
+            $io->success('Code generation completed successfully!');
+            $io->definitionList(
+                ['Duration' => "{$duration} seconds"],
+                ['Resources found' => $stats['total_resources']],
+                ['Detailed resources parsed' => $stats['detailed_resources']],
+                ['Files generated' => $stats['generated_files']]
+            );
+
+            if ($verbose && !empty($result->generatedFiles)) {
+                $io->section('Generated files:');
+                $io->listing(array_map(fn($file) => str_replace($outputDir . '/', '', $file), $result->generatedFiles));
+            }
+
+            return Command::SUCCESS;
+        } else {
+            $io->error('Code generation failed: ' . ($result->error ?? 'Unknown error'));
+            return Command::FAILURE;
+        }
+    }
+}
+
+// Create and run the application
+$application = new Application('Exact Online Code Generator', '1.0.0');
+$application->add(new GenerateCommand());
+$application->setDefaultCommand('generate', true);
+$application->run();
