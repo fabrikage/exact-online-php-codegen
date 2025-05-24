@@ -30,6 +30,9 @@ composer install
 # Want to see what's happening? Add verbose mode
 ./bin/exactonline-codegen models/ -v
 
+# Enable streaming mode (generate files as endpoints are crawled)
+./bin/exactonline-codegen models/ --streaming
+
 # Save logs for later
 ./bin/exactonline-codegen models/ --log-file=generation.log
 ```
@@ -40,6 +43,7 @@ When it runs, you'll see something like this:
 Exact Online API Code Generator
 ===============================
  Using PHP 8.4.1
+ 🔄 Standard mode: All endpoints crawled first, then files generated
  Output directory: /path/to/models
 
 Starting crawl...
@@ -49,6 +53,39 @@ Starting crawl...
  Resources found: 424
  Files generated: 424
 ```
+
+### Streaming Mode 🚀
+
+By default, the generator crawls all endpoints first, then generates all files at once. This is reliable but you only see file generation at the very end.
+
+With streaming mode (`--streaming`), files are generated as soon as each batch of endpoints is crawled. This gives you immediate feedback:
+
+```bash
+./bin/exactonline-codegen models/ --streaming -v
+```
+
+You'll see output like:
+
+```
+🚀 Streaming mode: Files will be generated as endpoints are crawled
+Processing and generating batch 1/85
+Generated model Accounts at /path/to/models/Models/Crm/Accounts.php
+Generated model Addresses at /path/to/models/Models/Crm/Addresses.php
+Processing and generating batch 2/85
+...
+```
+
+**When to use streaming mode:**
+
+- ✅ You want immediate feedback on generation progress
+- ✅ Working with limited memory environments
+- ✅ Testing or debugging specific endpoints
+
+**When to use standard mode:**
+
+- ✅ Production deployments (more reliable)
+- ✅ When you need atomic operations (all files or none)
+- ✅ Better error recovery
 
 ### Use it in your code
 

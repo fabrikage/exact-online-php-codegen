@@ -7,6 +7,7 @@ use ExactOnline\CodeGen\Http\DocumentationClient;
 use ExactOnline\CodeGen\Parser\DocumentationParser;
 use ExactOnline\CodeGen\Generator\ModelGenerator;
 use ExactOnline\CodeGen\Crawler\ApiCrawler;
+use ExactOnline\CodeGen\Crawler\StreamingApiCrawler;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -39,6 +40,12 @@ final class GenerateCommand extends Command
                 'l',
                 InputOption::VALUE_OPTIONAL,
                 'Log file path'
+            )
+            ->addOption(
+                'streaming',
+                's',
+                InputOption::VALUE_NONE,
+                'Enable streaming mode (generate files as endpoints are crawled)'
             );
     }
 
@@ -52,6 +59,7 @@ final class GenerateCommand extends Command
         $outputDir = $input->getArgument('output-dir');
         $verbose = $output->isVerbose();
         $logFile = $input->getOption('log-file');
+        $useStreaming = $input->getOption('streaming');
 
         // Setup logger
         $logger = new Logger('exactonline-codegen');
@@ -65,6 +73,12 @@ final class GenerateCommand extends Command
 
         $io->title('Exact Online API Code Generator');
         $io->text('Using PHP ' . PHP_VERSION);
+
+        if ($useStreaming) {
+            $io->text('🚀 Streaming mode: Files will be generated as endpoints are crawled');
+        } else {
+            $io->text('🔄 Standard mode: All endpoints crawled first, then files generated');
+        }
 
         // Validate output directory
         if (!is_dir($outputDir) && !mkdir($outputDir, 0755, true)) {
@@ -81,13 +95,24 @@ final class GenerateCommand extends Command
         $generator = new ModelGenerator();
         $filesystem = new Filesystem();
 
-        $crawler = new ApiCrawler(
-            httpClient: $httpClient,
-            parser: $parser,
-            generator: $generator,
-            filesystem: $filesystem,
-            logger: $logger
-        );
+        // Choose crawler based on streaming option
+        if ($useStreaming) {
+            $crawler = new StreamingApiCrawler(
+                httpClient: $httpClient,
+                parser: $parser,
+                generator: $generator,
+                filesystem: $filesystem,
+                logger: $logger
+            );
+        } else {
+            $crawler = new ApiCrawler(
+                httpClient: $httpClient,
+                parser: $parser,
+                generator: $generator,
+                filesystem: $filesystem,
+                logger: $logger
+            );
+        }
 
         // Run the crawler
         $io->section('Starting crawl...');
